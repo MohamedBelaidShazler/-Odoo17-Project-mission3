@@ -1,0 +1,92 @@
+<odoo>
+    <data>
+        <template id="report_delivery_document_value">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="web.html_container">
+                    <t t-call="web.external_layout">
+                        <div class="page" style="font-family: Arial, sans-serif;">
+                            <!-- En-tête -->
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <h1 style="font-size: 24px; margin-bottom: 5px;">BON DE LIVRAISON VALORISÉ</h1>
+                            </div>
+
+
+                            <table style="width: 100%; margin-bottom: 20px;">
+                                <tr>
+                                    <td style="width: 25%;"><strong>Date:</strong> <span t-field="o.scheduled_date" t-options='{"format": "dd/MM/yyyy"}'/></td>
+                                    <td style="width: 25%;"><strong>N° BL:</strong> <span t-field="o.name"/></td>
+                                    <td style="width: 25%;"><strong>Date commande:</strong> <span t-field="o.date" t-options='{"format": "dd/MM/yyyy"}'/></td>
+                                    <td style="width: 25%;"><strong>Réf. commande:</strong> <span t-esc="o.origin or '-'"/></td>
+                                </tr>
+                            </table>
+
+                            <!-- Tableau produits -->
+                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                                <thead>
+                                    <tr style="background-color: #f2f2f2;">
+                                        <th style="border: 1px solid #ddd; padding: 8px;">Référence interne</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px;">PRODUIT</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">QUANTITE</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Prix Unitaire</th>
+                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Hors taxes</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="o.move_ids" t-as="move">
+                                        <td style="border: 1px solid #ddd; padding: 8px;"><span t-field="move.product_id.default_code"/></td>
+                                        <td style="border: 1px solid #ddd; padding: 8px;"><span t-field="move.product_id.name"/></td>
+                                        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;"><span t-field="move.product_uom_qty"/></td>
+                                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;"><span t-esc="'%.3f' % move.price_unit"/> DT</td>
+                                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;"><span t-esc="'%.3f' % move.price_subtotal"/> DT</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+
+                            <div style="float: right; width: 300px;">
+                                <table style="width: 100%;">
+                                    <tr>
+                                        <td><strong>Total HT:</strong></td>
+                                        <td style="text-align: right;"><span t-esc="'%.3f' % o.amount_untaxed"/> DT</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>TVA (19%):</strong></td>
+                                        <td style="text-align: right;"><span t-esc="'%.3f' % o.amount_tax"/> DT</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Total TTC:</strong></td>
+                                        <td style="text-align: right;"><span t-esc="'%.3f' % o.amount_total"/> DT</td>
+                                    </tr>
+                                </table>
+                            </div>
+
+
+                            <div style="clear: both; padding-top: 80px;">
+                                <table style="width: 100%;">
+                                    <tr>
+                                        <td style="width: 50%;">
+                                            <p>Signature client:</p>
+                                            <div style="height: 50px; border-bottom: 1px solid #000;"></div>
+                                        </td>
+                                        <td style="width: 50%;">
+                                            <p>Signature responsable:</p>
+                                            <div style="height: 50px; border-bottom: 1px solid #000;"></div>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </t>
+                </t>
+            </t>
+        </template>
+
+        <record id="action_report_delivery_value" model="ir.actions.report">
+            <field name="name">Bon de livraison valorisé</field>
+            <field name="model">stock.picking</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">shz_bl_valorise.report_delivery_document</field>
+            <field name="binding_model_id" ref="stock.model_stock_picking"/>
+        </record>
+    </data>
+</odoo>

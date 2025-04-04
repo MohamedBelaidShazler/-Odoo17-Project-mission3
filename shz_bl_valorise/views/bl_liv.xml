@@ -1,0 +1,14 @@
+<odoo>
+    <data>
+<!--        <record id="view_picking_form_inherit" model="ir.ui.view">-->
+<!--            <field name="name">stock.picking.form.inherit</field>-->
+<!--            <field name="model">stock.picking</field>-->
+<!--            <field name="inherit_id" ref="stock.vpick.form"/>-->
+<!--            <field name="arch" type="xml">-->
+<!--                <xpath expr="//header" position="inside">-->
+<!--                    <button name="action_print_valorized_delivery_note" type="object" string="Imprimer BL Valorisé" class="btn-primary"/>-->
+<!--                </xpath>-->
+<!--            </field>-->
+<!--        </record>-->
+    </data>
+</odoo>
