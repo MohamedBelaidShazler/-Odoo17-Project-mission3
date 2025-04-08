@@ -26,10 +26,10 @@ class StockMove(models.Model):
             else:
                 move.price_unit = move.product_id.list_price
 
-    @api.depends('price_unit', 'product_uom_qty')
+    @api.depends('price_unit', 'quantity')
     def _compute_amounts(self):
         for move in self:
-            move.price_subtotal = move.price_unit * move.product_uom_qty
+            move.price_subtotal = move.price_unit * move.quantity
 
 
 class StockPicking(models.Model):
@@ -56,12 +56,38 @@ class StockPicking(models.Model):
         digits=(12, 3)
     )
 
-    @api.depends('move_ids.price_subtotal')
+    @api.depends('move_ids.price_subtotal', 'move_ids.sale_line_id.tax_id')
     def _compute_picking_totals(self):
         for picking in self:
-            picking.amount_untaxed = sum(picking.move_ids.mapped('price_subtotal'))
-            picking.amount_tax = picking.amount_untaxed * 0.19  # TVA 19%
-            picking.amount_total = picking.amount_untaxed + picking.amount_tax
+
+            amount_untaxed = sum(picking.move_ids.mapped('price_subtotal'))  # Montant total hors taxe
+            amount_tax = 0.0
+            amount_total = 0.0
+
+            for move in picking.move_ids:
+                sale_line = move.sale_line_id
+
+                if sale_line and sale_line.tax_id:
+                    taxes = sale_line.tax_id.compute_all(
+                        move.price_subtotal,
+                        quantity=1.0,
+                        product=sale_line.product_id,
+                        partner=sale_line.order_id.partner_id,
+                    )
+                    tax_total = taxes.get('total_included', 0.0) - taxes.get('total_excluded', 0.0)
+                    amount_tax += tax_total
+
+                    amount_total += move.price_subtotal + tax_total
+
+            picking.amount_untaxed = amount_untaxed
+            picking.amount_tax = amount_tax
+            picking.amount_total = amount_total
 
     def action_print_delivery_note(self):
         return self.env.ref('shz_bl_valorise.action_report_delivery_value').report_action(self)
+
+
+
+
+
+

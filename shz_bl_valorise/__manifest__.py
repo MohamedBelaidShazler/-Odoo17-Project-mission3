@@ -1,13 +1,12 @@
 {
     'name': 'shz_bon_livraison_valoriseee',
     'version': '18.0.1.0.0',
-    'category': '',
-    'summary': '',
+    'category': 'Sales',
+    'summary': 'Module pour la gestion des bons de livraison valorisés',
     'author': 'Mohamed Belaid',
-    'depends': ['base','sale', 'stock', 'sale_management'],
+    'depends': ['base', 'sale', 'stock', 'sale_management'],
     'data': [
-       # 'views/bl_liv.xml',
-        'report/report.xml'
+        'report/report.xml',
     ],
     'controllers': [],
     'installable': True,
@@ -16,5 +15,3 @@
     'license': 'AGPL-3',
     'sequence': 10,
 }
-
-

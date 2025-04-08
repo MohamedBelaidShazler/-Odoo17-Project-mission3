@@ -4,72 +4,166 @@
             <t t-foreach="docs" t-as="o">
                 <t t-call="web.html_container">
                     <t t-call="web.external_layout">
-                        <div class="page" style="font-family: Arial, sans-serif;">
-                            <!-- En-tête -->
-                            <div style="text-align: center; margin-bottom: 20px;">
-                                <h1 style="font-size: 24px; margin-bottom: 5px;">BON DE LIVRAISON VALORISÉ</h1>
-                            </div>
+                        <div class="page">
+                            <h2 style="text-align:center;">BON DE LIVRAISON VALORISÉ</h2>
 
-
-                            <table style="width: 100%; margin-bottom: 20px;">
+                            <table class="table table-sm mb-2">
                                 <tr>
-                                    <td style="width: 25%;"><strong>Date:</strong> <span t-field="o.scheduled_date" t-options='{"format": "dd/MM/yyyy"}'/></td>
-                                    <td style="width: 25%;"><strong>N° BL:</strong> <span t-field="o.name"/></td>
-                                    <td style="width: 25%;"><strong>Date commande:</strong> <span t-field="o.date" t-options='{"format": "dd/MM/yyyy"}'/></td>
-                                    <td style="width: 25%;"><strong>Réf. commande:</strong> <span t-esc="o.origin or '-'"/></td>
+                                    <td><strong>Date :</strong> <span t-field="o.scheduled_date" t-options='{"format": "dd/MM/yyyy"}'/></td>
+                                    <td><strong>N° BL :</strong> <span t-field="o.name"/></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Date commande :</strong> <span t-field="o.sale_id.date_order" t-options='{"format": "dd/MM/yyyy"}'/></td>
+                                    <td><strong>Réf. commande :</strong> <span t-esc="o.origin or '-'"/></td>
                                 </tr>
                             </table>
 
-                            <!-- Tableau produits -->
-                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+                            <table class="table table-sm table-bordered">
                                 <thead>
-                                    <tr style="background-color: #f2f2f2;">
-                                        <th style="border: 1px solid #ddd; padding: 8px;">Référence interne</th>
-                                        <th style="border: 1px solid #ddd; padding: 8px;">PRODUIT</th>
-                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">QUANTITE</th>
-                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Prix Unitaire</th>
-                                        <th style="border: 1px solid #ddd; padding: 8px; text-align: right;">Hors taxes</th>
+                                    <tr>
+                                        <th>Référence interne</th>
+                                        <th>Produit</th>
+                                        <th>Quantité</th>
+                                        <th>Prix Unitaire</th>
+                                        <th>Taxe</th>
+                                        <th>Hors taxes</th>
+                                        <th>Avec taxes</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr t-foreach="o.move_ids" t-as="move">
-                                        <td style="border: 1px solid #ddd; padding: 8px;"><span t-field="move.product_id.default_code"/></td>
-                                        <td style="border: 1px solid #ddd; padding: 8px;"><span t-field="move.product_id.name"/></td>
-                                        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;"><span t-field="move.product_uom_qty"/></td>
-                                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;"><span t-esc="'%.3f' % move.price_unit"/> DT</td>
-                                        <td style="border: 1px solid #ddd; padding: 8px; text-align: right;"><span t-esc="'%.3f' % move.price_subtotal"/> DT</td>
+                                    <tr t-foreach="o.move_ids_without_package" t-as="move">
+                                        <td><span t-field="move.product_id.default_code"/></td>
+                                        <td><span t-field="move.product_id.name"/></td>
+                                        <td><span t-field="move.quantity"/></td>
+                                        <td>
+                                            <t t-if="move.sale_line_id">
+                                                <span t-esc="'%.3f' % move.sale_line_id.price_unit"/> DT
+                                            </t>
+                                            <t t-else="">
+                                                <span t-esc="'%.3f' % (move.product_id.list_price or 0.0)"/> DT
+                                            </t>
+                                        </td>
+                                        <td>
+                                            <t t-foreach="move.sale_line_id.tax_id" t-as="tax">
+                                                <span t-esc="'%.2f' % tax.amount"/> %
+                                            </t>
+                                        </td>
+                                        <td>
+                                            <t t-set="price_unit" t-value="move.sale_line_id and move.sale_line_id.price_unit or move.product_id.list_price"/>
+                                            <t t-set="price_subtotal" t-value="price_unit * move.quantity"/>
+                                            <span t-esc="'%.3f' % price_subtotal"/> DT
+                                        </td>
+                                        <td>
+                                            <t t-if="move.sale_line_id">
+                                                <t t-set="taxes" t-value="move.sale_line_id.tax_id.compute_all(
+                                                    price_unit,
+                                                    quantity=move.quantity,
+                                                    product=move.product_id,
+                                                    partner=move.sale_line_id.order_id.partner_id
+                                                )"/>
+                                                <span t-esc="'%.3f' % taxes['total_included']"/> DT
+                                            </t>
+                                            <t t-else="">
+                                                <span>-</span>
+                                            </t>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
 
+                            <div class="mt32" style="display: flex; justify-content: space-between; gap: 20px;">
+                                <div style="width: 48%;">
+                                    <table class="table table-sm table-bordered">
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>Total HT :</strong></td>
+                                                <td>
+                                                    <t t-set="total_ht" t-value="sum(
+                                                        [(move.sale_line_id and move.sale_line_id.price_unit or move.product_id.list_price) * move.quantity
+                                                         for move in o.move_ids_without_package]
+                                                    )"/>
+                                                    <span t-esc="'%.3f' % total_ht"/> DT
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>TVA :</strong></td>
+                                                <td><span t-esc="'%.3f' % o.amount_tax"/> DT</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Total TTC :</strong></td>
+                                                <td>
+                                                    <t t-set="total_ttc" t-value="sum([
+                                                        move.sale_line_id and
+                                                        move.sale_line_id.tax_id.compute_all(
+                                                            move.sale_line_id.price_unit,
+                                                            quantity=move.quantity,
+                                                            product=move.product_id,
+                                                            partner=move.sale_line_id.order_id.partner_id
+                                                        )['total_included']
+                                                        if move.sale_line_id else 0.0
+                                                        for move in o.move_ids_without_package
+                                                    ])"/>
+                                                    <span t-esc="'%.3f' % total_ttc"/> DT
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
 
-                            <div style="float: right; width: 300px;">
-                                <table style="width: 100%;">
-                                    <tr>
-                                        <td><strong>Total HT:</strong></td>
-                                        <td style="text-align: right;"><span t-esc="'%.3f' % o.amount_untaxed"/> DT</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>TVA (19%):</strong></td>
-                                        <td style="text-align: right;"><span t-esc="'%.3f' % o.amount_tax"/> DT</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Total TTC:</strong></td>
-                                        <td style="text-align: right;"><span t-esc="'%.3f' % o.amount_total"/> DT</td>
-                                    </tr>
-                                </table>
+                                <div style="width: 48%;">
+                                    <t t-set="tax_dict" t-value="{}"/>
+                                    <t t-foreach="o.move_ids_without_package" t-as="move">
+                                        <t t-if="move.sale_line_id">
+                                            <t t-set="price_unit" t-value="move.sale_line_id.price_unit"/>
+                                            <t t-set="taxes" t-value="move.sale_line_id.tax_id.compute_all(
+                                                price_unit,
+                                                quantity=move.quantity,
+                                                product=move.product_id,
+                                                partner=move.sale_line_id.order_id.partner_id
+                                            )"/>
+                                            <t t-foreach="taxes['taxes']" t-as="tax">
+                                                <t t-set="base" t-value="tax['base']"/>
+                                                <t t-set="amount" t-value="tax['amount']"/>
+                                                <t t-set="rate" t-value="(base != 0.0) and (amount / base * 100.0) or 0.0"/>
+                                                <t t-set="rounded_rate" t-value="int(rate)"/>
+                                                <t t-set="existing" t-value="tax_dict.get(str(rounded_rate), 0.0)"/>
+                                                <t t-set="tax_dict" t-value="dict(tax_dict, **{str(rounded_rate): existing + amount})"/>
+                                            </t>
+                                        </t>
+                                    </t>
+
+                                    <table class="table table-sm table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th colspan="2"><strong>Détail TVA par Taux</strong></th>
+                                            </tr>
+                                            <tr>
+                                                <th>Taux TVA</th>
+                                                <th>Montant TVA</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="sorted(tax_dict.items())" t-as="item">
+                                                <tr>
+                                                    <td><span t-esc="item[0]"/>%</td>
+                                                    <td><span t-esc="'%.3f' % item[1]"/> DT</td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
 
-
-                            <div style="clear: both; padding-top: 80px;">
-                                <table style="width: 100%;">
+                            <!-- Signatures -->
+                            <div class="mt32">
+                                <table style="width:100%;">
                                     <tr>
-                                        <td style="width: 50%;">
-                                            <p>Signature client:</p>
+                                        <td>
+                                            <p>Signature client :</p>
                                             <div style="height: 50px; border-bottom: 1px solid #000;"></div>
                                         </td>
                                         <td style="width: 50%;">
-                                            <p>Signature responsable:</p>
+                                            <p>Signature responsable :</p>
                                             <div style="height: 50px; border-bottom: 1px solid #000;"></div>
                                         </td>
                                     </tr>
@@ -81,11 +175,12 @@
             </t>
         </template>
 
+        <!-- Action PDF -->
         <record id="action_report_delivery_value" model="ir.actions.report">
             <field name="name">Bon de livraison valorisé</field>
             <field name="model">stock.picking</field>
             <field name="report_type">qweb-pdf</field>
-            <field name="report_name">shz_bl_valorise.report_delivery_document</field>
+            <field name="report_name">shz_bl_valorise.report_delivery_document_value</field>
             <field name="binding_model_id" ref="stock.model_stock_picking"/>
         </record>
     </data>
